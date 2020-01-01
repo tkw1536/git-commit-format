@@ -1,0 +1,45 @@
+{
+	"name": "git-commit-format",
+	"displayName": "vscode-git-commit-format",
+	"description": "Format git commit messages",
+	"publisher": "tkw01536",
+	"repository": "https://github.com/tkw1536/git-commit-format",
+	"version": "1.0.0",
+	"engines": {
+		"vscode": "^1.41.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onLanguage:git-commit"
+	],
+	"license": "MIT",
+	"main": "./out/extension.js",
+	"contributes": {
+		"languages": [
+			{
+				"id": "git-commit",
+				"filenames": [
+					"git-commit"
+				]
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "yarn run compile",
+		"compile": "tsc -p ./",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@types/glob": "^7.1.1",
+		"@types/mocha": "^5.2.7",
+		"@types/node": "^12.11.7",
+		"@types/vscode": "^1.41.0",
+		"glob": "^7.1.5",
+		"mocha": "^6.2.2",
+		"typescript": "^3.6.4",
+		"tslint": "^5.20.0",
+		"vscode-test": "^1.2.2"
+	}
+}
