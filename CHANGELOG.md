@@ -3,3 +3,10 @@
 ## 1.0.0
 
 - Initial release
+
+## 1.1.0
+
+- Improvements to formatting implementation
+- Add support for folding each paragraph of the commit message
+- Add outline support
+- Automatically select the first line when opening a file

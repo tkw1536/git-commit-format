@@ -22,6 +22,13 @@ None.
 
 Initial relase. 
 
+### 1.1.0
+
+- Improvements to formatting implementation
+- Add support for folding each paragraph of the commit message
+- Add outline support
+- Automatically select the first line when opening a file
+
 ## Source Code and License
 
 This extension is open source and licensed under the terms of the *MIT License*.

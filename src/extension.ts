@@ -1,34 +1,35 @@
 import * as vscode from 'vscode';
-import { formatGitCommitMessage } from "./formatter";
+import { formatGitCommitMessage, getGitCommitFoldingRanges, getGitCommitSymbols, getSubjectLineSelection } from "./formatter";
 
 export function activate(context: vscode.ExtensionContext) {
-	vscode.languages.registerDocumentFormattingEditProvider('git-commit', {
-        provideDocumentFormattingEdits: editEntireDocument(formatGitCommitMessage),
-	});
+	// provide a formatting function
+	context.subscriptions.push(vscode.languages.registerDocumentFormattingEditProvider('git-commit', {
+        provideDocumentFormattingEdits: formatGitCommitMessage,
+	}));
+
+	// provide a folding range
+	context.subscriptions.push(vscode.languages.registerFoldingRangeProvider('git-commit', {
+		provideFoldingRanges: getGitCommitFoldingRanges,
+	}));
+
+	// provide a symbol provider
+	context.subscriptions.push(vscode.languages.registerDocumentSymbolProvider('git-commit', {
+		provideDocumentSymbols: getGitCommitSymbols,
+	}));
+
+	// when opening a 'git commit' document we want to automatically select the subject line to edit
+	context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(handleOpenGit));
+	vscode.workspace.textDocuments.forEach(handleOpenGit); // iterate over already open ones
 }
 
-/**
- * Function used to build an argument to provideDocumentFormattingEdits for an entire document as a whole
-*/
-function editEntireDocument(editCallback: (text: string) => string): (document: vscode.TextDocument) => vscode.TextEdit[] | undefined {
-	return (document: vscode.TextDocument) => {
-		// if we have a zero-line document, bail out
-		if (document.lineCount === 0) { return; }
+function handleOpenGit(document: vscode.TextDocument) {
+	// we need to be in "git-commit" mode
+	if (document.languageId !== "git-commit") { return; }
+	
+	// we need to have a current editor
+	const editor = vscode.window.activeTextEditor;
+	if (!editor) { return; }
 
-		// compute the range for the entire document
-		const docStart = document.lineAt(0).range;
-		const docEnd = document.lineAt(document.lineCount - 1).range;
-		const documentRange = docStart.union(docEnd);
-
-		// make the message
-		const newDocument = editCallback(document.getText());
-		
-		// and return the edit
-		return [new vscode.TextEdit(documentRange, newDocument)];
-	};
+	// set the 'subject' line selection
+	editor.selection = getSubjectLineSelection(document);
 }
-
-/**
- * Called when this extension is disabled. No-op. 
- */
-export function deactivate() {}
