@@ -48,17 +48,18 @@ export function getGitCommitFoldingRanges(document: vscode.TextDocument, context
 }
 
 export function getGitCommitSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.DocumentSymbol[]> {
+    const kindDescriptions = new Map([
+        [GitChunkKind.Subject, "Subject Line"],
+        [GitChunkKind.Paragraph, "Paragraph"],
+        [GitChunkKind.Comment, "Comment"],
+        [GitChunkKind.Diff, "Diff"],
+    ]);
+
     return getDocumentChunks(document)
         .map(({range, kind}) => {
-            const text = document.getText(range);
-            if (kind === GitChunkKind.Subject) {
-                return new vscode.DocumentSymbol("Subject Line", text, vscode.SymbolKind.Object, range, range);
-            } else if (kind === GitChunkKind.Paragraph) {
-                return new vscode.DocumentSymbol("Paragraph", text, vscode.SymbolKind.Object, range, range);
-            } else if (kind === GitChunkKind.Comment) {
-                return new vscode.DocumentSymbol("Comment", text, vscode.SymbolKind.Object, range, range);
-            } else if (kind === GitChunkKind.Diff) {
-                return new vscode.DocumentSymbol("Diff", text, vscode.SymbolKind.Object, range, range);
+            const description = kindDescriptions.get(kind);
+            if (description != null) {
+                return new vscode.DocumentSymbol(description, document.getText(range), vscode.SymbolKind.Object, range, range);
             }
         })
         .filter(e => e !== undefined) as vscode.DocumentSymbol[];
