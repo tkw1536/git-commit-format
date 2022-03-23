@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 const REGEX_SPLIT = /^\s*(#|$)/;
+const REGEX_CUT_LINE = /^# ------------------------ >8 ------------------------$/;
 const REGEX_BLANK = /^\s*$/;
 
 /** Represents a single chunk of a git commit message */
@@ -15,6 +16,7 @@ enum GitChunkKind {
     Paragraph = 1,
     Comment = 2,
     Blank = 3,
+    Diff = 4,
 }
 
 
@@ -55,6 +57,8 @@ export function getGitCommitSymbols(document: vscode.TextDocument, token: vscode
                 return new vscode.DocumentSymbol("Paragraph", text, vscode.SymbolKind.Object, range, range);
             } else if (kind === GitChunkKind.Comment) {
                 return new vscode.DocumentSymbol("Comment", text, vscode.SymbolKind.Object, range, range);
+            } else if (kind === GitChunkKind.Diff) {
+                return new vscode.DocumentSymbol("Diff", text, vscode.SymbolKind.Object, range, range);
             }
         })
         .filter(e => e !== undefined) as vscode.DocumentSymbol[];
@@ -76,6 +80,8 @@ function getDocumentChunks(document: vscode.TextDocument): GitCommitChunk[] {
     // and if we had an initial and subject line
     let hadInitialLine = false;
     let hadSubjectLine = false;
+    let hadCutLine = false;
+    let areInDiff = false;
 
     let line: vscode.TextLine;
     for (let counter = 0; counter < document.lineCount; counter++) {
@@ -87,8 +93,20 @@ function getDocumentChunks(document: vscode.TextDocument): GitCommitChunk[] {
             kind = GitChunkKind.Blank;
         } else if (REGEX_SPLIT.test(line.text)) {
             kind = GitChunkKind.Comment;
+            if (REGEX_CUT_LINE.test(line.text)) {
+                hadCutLine = true;
+            }
         } else {
             kind = GitChunkKind.Paragraph;
+        }
+
+        // When we had a cut line and we are not in the comment section any longer, all
+        // remaining text will be the diff
+        if (hadCutLine && !REGEX_SPLIT.test(line.text)) {
+            areInDiff = true;
+        }
+        if (areInDiff) {
+            kind = GitChunkKind.Diff;
         }
 
         // the kind is idential to the last kind, so we can 'append' this line to the selection
@@ -104,7 +122,7 @@ function getDocumentChunks(document: vscode.TextDocument): GitCommitChunk[] {
             chunks.pop();
             hadInitialLine = true;
         }
-        
+
         // store the kind we had as the last kind
         // if we didn't have a subject line yet, we can make it one
         lastKind = kind;
