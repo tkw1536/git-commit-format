@@ -29,6 +29,11 @@ Initial relase.
 - Add outline support
 - Automatically select the first line when opening a file
 
+### 1.2.0
+
+- Add support for `--verbose` commit messages (thanks @datenreisender)
+- Update various dependencies to fix security vulnerabilities
+
 ## Source Code and License
 
 This extension is open source and licensed under the terms of the *MIT License*.
