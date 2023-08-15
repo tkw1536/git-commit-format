@@ -3,6 +3,8 @@ import * as vscode from 'vscode';
 const REGEX_SPLIT = /^\s*(#|$)/;
 const REGEX_CUT_LINE = /^# ------------------------ >8 ------------------------$/;
 const REGEX_BLANK = /^\s*$/;
+// Regex to validate if a line is a `key: value` line.
+const REGEX_TRAILER = /^[A-Za-z0-9\-]+: .+$/;
 
 /** Represents a single chunk of a git commit message */
 interface GitCommitChunk {
@@ -17,6 +19,7 @@ enum GitChunkKind {
     Comment = 2,
     Blank = 3,
     Diff = 4,
+    Trailers = 5
 }
 
 
@@ -28,6 +31,8 @@ export function formatGitCommitMessage(document: vscode.TextDocument, options: v
                 return vscode.TextEdit.replace(range, formatSubjectChunk(text));
             } else if (kind === GitChunkKind.Paragraph) {
                 return vscode.TextEdit.replace(range, formatParagraphChunk(text));
+            } else if (kind === GitChunkKind.Trailers) {
+                return vscode.TextEdit.replace(range, text);
             } else if (kind === GitChunkKind.Blank) {
                 return vscode.TextEdit.replace(range, '');
             }
@@ -38,7 +43,7 @@ export function formatGitCommitMessage(document: vscode.TextDocument, options: v
 export function getGitCommitFoldingRanges(document: vscode.TextDocument, context: vscode.FoldingContext, token: vscode.CancellationToken): vscode.ProviderResult<vscode.FoldingRange[]> {
     return getDocumentChunks(document)
     .map(({range, kind}) => {
-        if (kind === GitChunkKind.Subject || kind === GitChunkKind.Paragraph) {
+        if (kind === GitChunkKind.Subject || kind === GitChunkKind.Paragraph || kind === GitChunkKind.Trailers) {
             return new vscode.FoldingRange(range.start.line, range.end.line);
         } else if (kind === GitChunkKind.Comment) {
             return new vscode.FoldingRange(range.start.line, range.end.line, vscode.FoldingRangeKind.Comment);
@@ -53,6 +58,7 @@ export function getGitCommitSymbols(document: vscode.TextDocument, token: vscode
         [GitChunkKind.Paragraph, "Paragraph"],
         [GitChunkKind.Comment, "Comment"],
         [GitChunkKind.Diff, "Diff"],
+        [GitChunkKind.Trailers, "Trailers"],
     ]);
 
     return getDocumentChunks(document)
@@ -139,6 +145,12 @@ function getDocumentChunks(document: vscode.TextDocument): GitCommitChunk[] {
         });
     }
 
+    // The last paragraph might actually be a trailer paragraph.
+    let lastParagraph = chunks[chunks.map(chunk => chunk.kind).lastIndexOf(GitChunkKind.Paragraph)]
+    if (lastParagraph && isTrailersChunk(lastParagraph, document)) {
+        lastParagraph.kind = GitChunkKind.Trailers
+    }
+
     return chunks;
 }
 
@@ -171,4 +183,23 @@ function formatParagraphChunk(text: string): string {
     return text
         .replace(/\s+/g, ' ').trim()
         .replace(/(?![^\n]{1,72}$)([^\n]{1,72})\s/g, '$1\n');
+}
+
+/**
+ * Check if all lines for the given chunk are trailers.
+ *
+ * A trailer is a line with `key: value`.
+ *
+ * @param chunk The chunk to test.
+ * @param document The Document the chunk belongs to.
+ * @returns true if all lines of the chunk are trailers else false.
+ */
+function isTrailersChunk(chunk: GitCommitChunk, document: vscode.TextDocument): boolean {
+    for (let counter = chunk.range.start.line; counter <= chunk.range.end.line; counter++) {
+        const text = document.lineAt(counter).text;
+        if (!REGEX_TRAILER.test(text)) {
+            return false
+        }
+    }
+    return true
 }
