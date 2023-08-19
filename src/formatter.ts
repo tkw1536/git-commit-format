@@ -65,9 +65,10 @@ export function getGitCommitSymbols(document: vscode.TextDocument, token: vscode
     return getDocumentChunks(document)
         .map(({range, kind}) => {
             const description = kindDescriptions.get(kind);
-            if (description != null) {
-                return new vscode.DocumentSymbol(description, document.getText(range), vscode.SymbolKind.Object, range, range);
+            if (typeof description !== 'string') {
+                return;
             }
+            return new vscode.DocumentSymbol(description, document.getText(range), vscode.SymbolKind.Object, range, range);
         })
         .filter(e => e !== undefined) as vscode.DocumentSymbol[];
 }
