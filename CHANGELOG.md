@@ -15,3 +15,7 @@
 
 - Add support for `--verbose` commit messages (thanks @datenreisender)
 - Update various dependencies to fix security vulnerabilities
+
+### 1.3.0
+
+- Add support for trailers (thanks @MartinWallgren)

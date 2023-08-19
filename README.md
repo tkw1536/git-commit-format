@@ -34,6 +34,10 @@ Initial relase.
 - Add support for `--verbose` commit messages (thanks @datenreisender)
 - Update various dependencies to fix security vulnerabilities
 
+### 1.3.0
+
+- Add support for trailers (thanks @MartinWallgren)
+
 ## Source Code and License
 
 This extension is open source and licensed under the terms of the *MIT License*.
